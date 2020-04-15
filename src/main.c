@@ -26,6 +26,7 @@
 #include "generated/led_green.h"
 #include "libcan.h"
 
+
 /* Led state */
 typedef enum {OFF = 0, ON = 1} led_state_t;
 led_state_t red_state   = OFF; /* Red   is ON iff in verbose mode */
@@ -210,9 +211,9 @@ void dump_CAN_frame (can_header_t *head, can_data_t *body)
 
   // 1. ID in decimal
   if (head->IDE == CAN_ID_STD) {
-    n = sprintf(buffer, "@%i", head->id.std);
+    n = sprintf(buffer, "t@%i", head->id.std);
   } else {
-    n = sprintf(buffer, "@%i", head->id.ext);
+    n = sprintf(buffer, "T@%i", head->id.ext);
   }
 
   // 2. length
@@ -286,6 +287,7 @@ int _main(uint32_t my_id)
     } else {
         printf("sys_init(leds) - success\n");
     }
+
 
     /*
      * Configuring the two Controller Area Network (CAN) peripherals.
@@ -439,17 +441,18 @@ int _main(uint32_t my_id)
               return 1;
             }
 
-            /* 1. mirror it to the serial port. */
+            /* 1. Mirror it to the serial port. */
             if (verbose) {
               printf("CAN%d received (IT %d, FIFO %d):\n", port, nb_IT, fifo);
               dump_CAN_frame (&head, &body);
             }
 
             /* 2. Forward it to the other CAN */
+            can_mbox_t *mbox = NULL;
             if (port == CAN_PORT_1) {
-              cret = can_xmit(&can2_ctx, &head, &body);
+              cret = can_xmit(&can2_ctx, &head, &body, mbox);
             } else {
-              cret = can_xmit(&can1_ctx, &head, &body);
+              cret = can_xmit(&can1_ctx, &head, &body, mbox);
             }
             if (cret) {
               printf("Error: CAN%d Xmit %d\n", port, cret);
